@@ -274,7 +274,20 @@ class MultipartDecoder:
         # position of a LF or a CR, unless that position is more
         # than a complete boundary from the end in which case there
         # is no partial boundary.
-        complete_boundary_index = len(data) - len(b"\r\n--" + self.boundary)
+        boundary_index = data.find(b"--" + self.boundary)
+        if boundary_index != -1:
+            try:
+                last_nl = data.rindex(b"\n", 0, boundary_index)
+            except ValueError:
+                last_nl = boundary_index
+            try:
+                last_cr = data.rindex(b"\r", 0, boundary_index)
+            except ValueError:
+                last_cr = boundary_index
+            return min(last_nl, last_cr)
+
+        max_boundary_length = len(b"\r\n--" + self.boundary) + SEARCH_EXTRA_LENGTH
+        complete_boundary_index = max(0, len(data) - max_boundary_length)
         try:
             last_nl = data.rindex(b"\n")
         except ValueError:

@@ -95,6 +95,8 @@ Version 3.2.0
 -   ``default_stream_factory`` is deprecated. If not passed, ``FormDataParser``
     will make a ``stream_factory`` that uses ``max_form_memory_size``.
     :issue:`3272`
+-   Fix multipart parser appending a stray delimiter byte when chunks split near
+    the boundary. :issue:`3285`
 -   ``redirect`` returns a ``303`` status code by default instead of ``302``.
     This tells the client to always switch to ``GET``, rather than only
     switching ``POST`` to ``GET``. This preserves the current behavior of

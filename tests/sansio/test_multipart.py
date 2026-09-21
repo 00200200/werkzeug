@@ -180,3 +180,34 @@ Content-Type: text/plain; charset="UTF-8"
     for event in events:
         result += encoder.send_event(event)
     assert data == result
+
+
+@pytest.mark.parametrize("chunk_size", [1, 2, 3, 5, 7, 11, 13, 20])
+def test_chunk_split_near_closing_boundary(chunk_size: int) -> None:
+    boundary = b"WZBOUND"
+    body = (
+        b'--WZBOUND\r\nContent-Disposition: form-data; name="a"\r\n\r\n'
+        b"\r\n--WZBOUND--\r\n"
+    )
+    decoder = MultipartDecoder(boundary)
+    data = bytearray()
+    ci = 0
+    chunks = [body[i : i + chunk_size] for i in range(0, len(body), chunk_size)]
+    fed_end = False
+    while True:
+        event = decoder.next_event()
+        if isinstance(event, NeedData):
+            if ci < len(chunks):
+                decoder.receive_data(chunks[ci])
+                ci += 1
+            elif not fed_end:
+                decoder.receive_data(None)
+                fed_end = True
+            else:
+                break
+        elif isinstance(event, Data):
+            data.extend(event.data)
+        elif isinstance(event, Epilogue):
+            break
+
+    assert bytes(data) == b""
